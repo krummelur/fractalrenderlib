@@ -40,13 +40,16 @@ JNIEXPORT void JNICALL Java_se_fredriksonsound_mandelbrot_NativeMandelbrot_mande
 
 JNIEXPORT void JNICALL Java_se_fredriksonsound_mandelbrot_NativeMandelbrot_render_1to_1memory
 (JNIEnv* env, jobject o, jdouble init_re, jdouble init_im, jdouble searchWidth, jdouble searchHeight, jintArray inArr) {
+
 	//jdoubleArray outJNIArray = (env)->NewDoubleArray(2);
+	
 	jsize sz = (env)->GetArrayLength(inArr);
 	int i;
 	double scaleFactorX = searchWidth  / (width);
 	double scaleFactorY = searchHeight  / (height);
 	double sampleOffsetX = scaleFactorX / samplesPerPixel;
 	double sampleOffsetY = scaleFactorY / samplesPerPixel;
+	#pragma omp parallel for
 	for (i = 0; i < width * height; i++) {
 		for (int j = 0; j < samplesPerPixel; j++) {
 			for (int k = 0; k < samplesPerPixel; k++) {

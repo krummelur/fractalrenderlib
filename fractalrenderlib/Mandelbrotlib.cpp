@@ -9,7 +9,7 @@ static int width;  // image width
 static int height;  // image height
 static double ESCAPE_VALUE = 2.0;
 static const int buf_sz = 4096 * 4096;
-int samplesPerPixel = 4;
+int samplesPerPixel = 15;
 jint* jptr;
 
 
@@ -42,20 +42,22 @@ JNIEXPORT void JNICALL Java_se_fredriksonsound_mandelbrot_NativeMandelbrot_rende
 (JNIEnv* env, jobject o, jdouble init_re, jdouble init_im, jdouble searchWidth, jdouble searchHeight, jintArray inArr) {
 
 	//jdoubleArray outJNIArray = (env)->NewDoubleArray(2);
-	
+	int totalSamples = samplesPerPixel * samplesPerPixel;
 	jsize sz = (env)->GetArrayLength(inArr);
 	int i;
 	double scaleFactorX = searchWidth  / (width);
 	double scaleFactorY = searchHeight  / (height);
 	double sampleOffsetX = scaleFactorX / samplesPerPixel;
 	double sampleOffsetY = scaleFactorY / samplesPerPixel;
-	#pragma omp parallel for
+	#pragma omp parallel for schedule(dynamic)
 	for (i = 0; i < width * height; i++) {
+		double x = 0;
 		for (int j = 0; j < samplesPerPixel; j++) {
 			for (int k = 0; k < samplesPerPixel; k++) {
-				jptr[i] = (iterationsBeforeEscape(-searchWidth / 2 + scaleFactorX * (i % width) + init_re + (-scaleFactorX/2 + sampleOffsetX*k),
+				x += (iterationsBeforeEscape(-searchWidth / 2 + scaleFactorX * (i % width) + init_re + (-scaleFactorX/2 + sampleOffsetX*k),
 					-searchHeight / 2 + scaleFactorY * (i / width) + init_im + (-scaleFactorX / 2 + sampleOffsetX * j)));
 			}
+			jptr[i] = x / totalSamples;
 		}
 
 

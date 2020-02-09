@@ -9,7 +9,7 @@ static int width;  // image width
 static int height;  // image height
 static double ESCAPE_VALUE = 2.0;
 static const int buf_sz = 4096 * 4096;
-int samplesPerPixel = 15;
+int samplesPerPixel = 6;
 jint* jptr;
 
 
@@ -47,15 +47,16 @@ JNIEXPORT void JNICALL Java_se_fredriksonsound_mandelbrot_NativeMandelbrot_rende
 	int i;
 	double scaleFactorX = searchWidth  / (width);
 	double scaleFactorY = searchHeight  / (height);
-	double sampleOffsetX = scaleFactorX / samplesPerPixel;
-	double sampleOffsetY = scaleFactorY / samplesPerPixel;
+	double sampleOffsetX = scaleFactorX / (samplesPerPixel+2);
+	double sampleOffsetY = scaleFactorY / (samplesPerPixel+2);
 	#pragma omp parallel for schedule(dynamic)
 	for (i = 0; i < width * height; i++) {
 		double x = 0;
 		for (int j = 0; j < samplesPerPixel; j++) {
 			for (int k = 0; k < samplesPerPixel; k++) {
-				x += (iterationsBeforeEscape(-searchWidth / 2 + scaleFactorX * (i % width) + init_re + (-scaleFactorX/2 + sampleOffsetX*k),
-					-searchHeight / 2 + scaleFactorY * (i / width) + init_im + (-scaleFactorX / 2 + sampleOffsetX * j)));
+				x += (iterationsBeforeEscape(
+					-searchWidth  / 2 + scaleFactorX * (i % width) + init_re + (-scaleFactorX/2 + sampleOffsetX*(k+1)),
+					-searchHeight / 2 + scaleFactorY * (i / width) + init_im + (-scaleFactorY/2 + sampleOffsetY*(j+1))));
 			}
 			jptr[i] = x / totalSamples;
 		}
@@ -84,12 +85,10 @@ JNIEXPORT void JNICALL Java_se_fredriksonsound_mandelbrot_NativeMandelbrot_rende
 * Calculates the number of iterations before value is greater than ESCAPE_VALUE
 */
 int iterationsBeforeEscape(double re, double im) {
-	int iterations = -1;
+	int iterations = 0;
 	double zr = re;
 	double zi = im;
 	double znr = 0;
-
-	//return (int)(re * re + im * im * 50);
 
 	while (zr * zr + zi * zi < ESCAPE_VALUE*ESCAPE_VALUE && iterations < MAX_ITERATIONS) {
 		// (zr + zi)(zr + zi) = zr(zr +zi) + zi(zr +zi) = zr*zr + zr*im + zi*zr +zi * zi =>
@@ -100,5 +99,5 @@ int iterationsBeforeEscape(double re, double im) {
 		zi = znr * zi * 2 + im;
 		iterations++;
 	}
-	return iterations; // iterations;
+	return iterations;
 }
